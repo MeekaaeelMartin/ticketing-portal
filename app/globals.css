@@ -1,0 +1,82 @@
+/* --- Modern Always-On Dark Theme --- */
+:root,
+.dark-theme {
+  --color-bg-gradient: linear-gradient(135deg, #18191a 0%, #232526 100%);
+  --color-bg: #18191a;
+  --color-bg-alt: #232526;
+  --color-surface: #232526;
+  --color-border: #333;
+  --color-text: #f5f6fa;
+  --color-text-muted: #b0b3b8;
+  --color-accent: #4f8cff;
+  --color-accent-hover: #2563eb;
+  --color-error: #ff4d4f;
+  --font-main: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+
+/* Force all backgrounds and text to use dark theme variables */
+html, body {
+  background: var(--color-bg-gradient) !important;
+  color: var(--color-text) !important;
+  font-family: var(--font-main);
+  min-height: 100vh;
+  margin: 0;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* Remove default background from Next.js root divs if present */
+#__next, #root {
+  background: transparent !important;
+}
+
+/* Form and input styles */
+input, select, textarea, button {
+  font-family: inherit;
+  font-size: 1rem;
+  background: var(--color-bg-alt);
+  color: var(--color-text);
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  outline: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  transition: background 0.2s, color 0.2s, border 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--color-accent);
+}
+
+button {
+  background: var(--color-accent);
+  color: #000;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(79,140,255,0.10);
+  padding: 12px 28px;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  transition: background 0.2s, color 0.2s;
+}
+
+button:active {
+  background: var(--color-accent-hover);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  background: var(--color-bg-alt);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+/* Utility classes for error and muted text */
+.text-error {
+  color: var(--color-error);
+}
+.text-muted {
+  color: var(--color-text-muted);
+}
