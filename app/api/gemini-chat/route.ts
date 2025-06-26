@@ -31,67 +31,74 @@ async function fetchWithTimeout(resource: RequestInfo, options: RequestInit = {}
 
 export async function POST(req: NextRequest) {
   try {
-    const { userInfo, messages }: { userInfo: GeminiUserInfo; messages: GeminiChatMessage[] } = await req.json();
-    if (!userInfo || !messages) {
-      console.error('Missing userInfo or messages:', { userInfo, messages });
-      return NextResponse.json({ success: false, error: 'Missing userInfo or messages.' }, { status: 400 });
-    }
-    if (!GEMINI_API_KEY) {
-      console.error('GEMINI_API_KEY is not set');
-      return NextResponse.json({ success: false, error: 'AI API key is not set.' }, { status: 500 });
-    }
-    // Prepare Gemini API request
-    const geminiMessages = messages.map((m: GeminiChatMessage) => ({
-      role: m.role === 'ai' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }));
-    const body = {
-      contents: geminiMessages,
-    };
-    console.log('Sending to Gemini API:', JSON.stringify(body));
-    // Use streaming endpoint with timeout
-    let res;
     try {
-      res = await fetchWithTimeout(
-        'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:streamGenerateContent?key=' + GEMINI_API_KEY,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        },
-        8000 // 8 seconds
-      );
-    } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'AbortError') {
-        console.error('Gemini API request timed out');
-        return NextResponse.json({ success: false, error: 'Gemini API request timed out.' }, { status: 504 });
+      const { userInfo, messages }: { userInfo: GeminiUserInfo; messages: GeminiChatMessage[] } = await req.json();
+      if (!userInfo || !messages) {
+        console.error('Missing userInfo or messages:', { userInfo, messages });
+        return NextResponse.json({ success: false, error: 'Missing userInfo or messages.' }, { status: 400 });
       }
-      console.error('Gemini API fetch error:', err);
+      if (!GEMINI_API_KEY) {
+        console.error('GEMINI_API_KEY is not set');
+        return NextResponse.json({ success: false, error: 'AI API key is not set.' }, { status: 500 });
+      }
+      // Prepare Gemini API request
+      const geminiMessages = messages.map((m: GeminiChatMessage) => ({
+        role: m.role === 'ai' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      }));
+      const body = {
+        contents: geminiMessages,
+      };
+      console.log('Sending to Gemini API:', JSON.stringify(body));
+      // Use streaming endpoint with timeout
+      let res;
+      try {
+        res = await fetchWithTimeout(
+          'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:streamGenerateContent?key=' + GEMINI_API_KEY,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          },
+          8000 // 8 seconds
+        );
+      } catch (err: unknown) {
+        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'AbortError') {
+          console.error('Gemini API request timed out');
+          return NextResponse.json({ success: false, error: 'Gemini API request timed out.' }, { status: 504 });
+        }
+        console.error('Gemini API fetch error:', err);
+        const message = (err && typeof err === 'object' && 'message' in err) ? (err as { message: string }).message : String(err);
+        return NextResponse.json({ success: false, error: 'Gemini API fetch error: ' + message }, { status: 502 });
+      }
+      console.log('Gemini API response status:', res.status);
+      if (!res.body) {
+        const text = await res.text().catch(() => '');
+        console.error('No response body from Gemini:', res.status, text);
+        return NextResponse.json({ success: false, error: `No response body from Gemini. Status: ${res.status}. Body: ${text}` }, { status: 500 });
+      }
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        console.error('Gemini API error response:', res.status, text);
+        return NextResponse.json({ success: false, error: `Gemini API error: Status ${res.status}. Body: ${text}` }, { status: res.status });
+      }
+      // Stream the response to the client
+      return new Response(res.body, {
+        headers: {
+          'Content-Type': res.headers.get('content-type') || 'application/json',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    } catch (err: unknown) {
+      console.error('Gemini API error (inner):', err);
       const message = (err && typeof err === 'object' && 'message' in err) ? (err as { message: string }).message : String(err);
-      return NextResponse.json({ success: false, error: 'Gemini API fetch error: ' + message }, { status: 502 });
+      return NextResponse.json({ error: 'Gemini API error (inner): ' + message }, { status: 500 });
     }
-    console.log('Gemini API response status:', res.status);
-    if (!res.body) {
-      const text = await res.text().catch(() => '');
-      console.error('No response body from Gemini:', res.status, text);
-      return NextResponse.json({ success: false, error: `No response body from Gemini. Status: ${res.status}. Body: ${text}` }, { status: 500 });
-    }
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      console.error('Gemini API error response:', res.status, text);
-      return NextResponse.json({ success: false, error: `Gemini API error: Status ${res.status}. Body: ${text}` }, { status: res.status });
-    }
-    // Stream the response to the client
-    return new Response(res.body, {
-      headers: {
-        'Content-Type': res.headers.get('content-type') || 'application/json',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    });
   } catch (err: unknown) {
-    console.error('Gemini API error:', err);
+    // Top-level catch for any unhandled errors
+    console.error('Gemini API error (outer):', err);
     const message = (err && typeof err === 'object' && 'message' in err) ? (err as { message: string }).message : String(err);
-    return NextResponse.json({ error: 'Gemini API error: ' + message }, { status: 500 });
+    return NextResponse.json({ error: 'Gemini API error (outer): ' + message }, { status: 500 });
   }
 } 
