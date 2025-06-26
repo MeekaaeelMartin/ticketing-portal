@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
       html,
     });
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ error: 'Failed to send review.', details: error?.message || String(error) }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: 'Failed to send review.', details: message }, { status: 500 });
   }
 } 

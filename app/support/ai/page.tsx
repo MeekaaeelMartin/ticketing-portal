@@ -27,7 +27,6 @@ export default function SupportAIPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const [showWelcome, setShowWelcome] = useState(true);
   const [muted, setMuted] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -63,12 +62,6 @@ export default function SupportAIPage() {
       audioRef.current?.play();
     }
   }, [messages, muted]);
-
-  // Welcome message animation
-  useEffect(() => {
-    const timer = setTimeout(() => setShowWelcome(false), 1800);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleCopy = useCallback((content: string, idx: number) => {
     navigator.clipboard.writeText(content);
@@ -117,14 +110,14 @@ export default function SupportAIPage() {
         // Streaming logic (as before)
         const reader = res.body.getReader();
         let done = false;
-        let decoder = new TextDecoder();
+        const decoder = new TextDecoder();
         let buffer = "";
         while (!done) {
           const { value, done: doneReading } = await reader.read();
           done = doneReading;
           if (value) {
             buffer += decoder.decode(value, { stream: !done });
-            let lines = buffer.split(/\r?\n/);
+            const lines = buffer.split(/\r?\n/);
             buffer = lines.pop() || "";
             for (const line of lines) {
               if (!line.trim()) continue;
@@ -141,7 +134,7 @@ export default function SupportAIPage() {
                     return updated;
                   });
                 }
-              } catch (err) {
+              } catch {
                 // ignore JSON parse errors for incomplete lines
               }
             }
@@ -459,7 +452,7 @@ export default function SupportAIPage() {
                               {msg.role === 'ai' ? (
                                 <ReactMarkdown
                                   components={{
-                                    code({inline, className, children, ...props}: React.ComponentPropsWithoutRef<'code'> & {inline?: boolean}) {
+                                    code({inline, children, ...props}: React.ComponentPropsWithoutRef<'code'> & {inline?: boolean}) {
                                       return !inline ? (
                                         <pre style={{ background: '#0a1f1a', color: '#2aff8f', borderRadius: 8, padding: 12, margin: '8px 0', overflowX: 'auto', fontSize: 15 }}>
                                           <code {...props}>{children}</code>
@@ -511,7 +504,7 @@ export default function SupportAIPage() {
                               )}
                             </span>
                             <span style={{ fontSize: 12, color: '#1de982', margin: msg.role === 'user' ? '0 8px 0 0' : '0 0 0 8px', alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', minWidth: 56, textAlign: msg.role === 'user' ? 'right' : 'left', marginTop: 6 }}>
-                              {formatTime(new Date())}
+                              {formatTime(new Date()).replace("'", "&apos;")}
                             </span>
                           </span>
                         </div>
@@ -660,7 +653,7 @@ export default function SupportAIPage() {
                         {msg.role === 'ai' ? (
                           <ReactMarkdown
                             components={{
-                              code({inline, className, children, ...props}: React.ComponentPropsWithoutRef<'code'> & {inline?: boolean}) {
+                              code({inline, children, ...props}: React.ComponentPropsWithoutRef<'code'> & {inline?: boolean}) {
                                 return !inline ? (
                                   <pre style={{ background: '#0a1f1a', color: '#2aff8f', borderRadius: 8, padding: 12, margin: '8px 0', overflowX: 'auto', fontSize: 15 }}>
                                     <code {...props}>{children}</code>
@@ -712,7 +705,7 @@ export default function SupportAIPage() {
                         )}
                       </span>
                       <span style={{ fontSize: 12, color: '#1de982', margin: msg.role === 'user' ? '0 8px 0 0' : '0 0 0 8px', alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', minWidth: 56, textAlign: msg.role === 'user' ? 'right' : 'left', marginTop: 6 }}>
-                        {formatTime(new Date())}
+                        {formatTime(new Date()).replace("'", "&apos;")}
                       </span>
                     </span>
                   </div>

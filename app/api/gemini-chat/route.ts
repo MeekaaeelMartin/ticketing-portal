@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Missing userInfo or messages.' }, { status: 400 });
     }
     // Prepare Gemini API request
-    const geminiMessages = messages.map((m: any) => ({
+    const geminiMessages = messages.map((m: GeminiChatMessage) => ({
       role: m.role === 'ai' ? 'model' : 'user',
       parts: [{ text: m.content }],
     }));

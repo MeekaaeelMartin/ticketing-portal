@@ -7,23 +7,27 @@ const uri = "mongodb+srv://meekaaeel:tnSb4wR4Qoy0Pa4z@ticketsystem.vsozmtl.mongo
 if (!uri) throw new Error('MONGODB_URI is not defined in environment variables');
 
 let client: MongoClient;
-let db: Db;
 let clientPromise: Promise<MongoClient>;
 
+interface GlobalWithMongo {
+  _mongoClientPromise?: Promise<MongoClient>;
+}
+const globalWithMongo = globalThis as GlobalWithMongo;
 if (process.env.NODE_ENV === 'development') {
   // In dev, use a global variable so hot reloads don't create new clients
-  if (!(global as any)._mongoClientPromise) {
+  if (!globalWithMongo._mongoClientPromise) {
     client = new MongoClient(uri);
-    (global as any)._mongoClientPromise = client.connect();
+    globalWithMongo._mongoClientPromise = client.connect();
   }
-  clientPromise = (global as any)._mongoClientPromise;
+  clientPromise = globalWithMongo._mongoClientPromise;
 } else {
   // In prod, create a new client per invocation
   client = new MongoClient(uri);
   clientPromise = client.connect();
 }
+const clientPromiseConst = clientPromise;
 
 export async function getDb(): Promise<Db> {
-  const client = await clientPromise;
+  const client = await clientPromiseConst;
   return client.db(); // Use default DB from URI
 } 

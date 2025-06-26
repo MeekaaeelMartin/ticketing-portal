@@ -43,7 +43,7 @@ export default function SupportPage() {
     try {
       sessionStorage.setItem('supportForm', JSON.stringify(form));
       router.push('/support/ai');
-    } catch (err) {
+    } catch {
       setApiError('Unexpected error. Please try again.');
     } finally {
       setLoading(false);

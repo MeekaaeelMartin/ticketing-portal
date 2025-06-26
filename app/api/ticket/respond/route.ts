@@ -17,9 +17,11 @@ const SYSTEM_PROMPT = `You are a professional, friendly Support-Triage Assistant
 const STAFF_EMAIL = 'meekaaeel@tecbot.co.za';
 
 interface TicketRespondMessage {
-  role: string;
+  role: 'user' | 'ai';
   content: string;
 }
+
+type OpenAIChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,13 +44,13 @@ export async function POST(req: NextRequest) {
       });
     }
     // Prepare messages for OpenAI
-    const chatMessages = [
+    const chatMessages: OpenAIChatMessage[] = [
       { role: 'system', content: SYSTEM_PROMPT },
       ...response.map((m: TicketRespondMessage) => ({
-        role: m.role === 'ai' ? 'assistant' : m.role,
+        role: m.role === 'ai' ? 'assistant' : 'user',
         content: m.content
-      })),
-    ] as any;
+      } as OpenAIChatMessage)),
+    ];
     const completion = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: chatMessages,

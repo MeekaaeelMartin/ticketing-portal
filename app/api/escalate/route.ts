@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       <p><b>Original Message:</b> ${userInfo.message}</p>
       <h3>Chat Transcript</h3>
       <div style="background:#f5f6fa;padding:12px;border-radius:8px;">
-        ${transcript.map((m: any) => `<div><b>${m.role === 'user' ? 'Client' : 'AI'}:</b> ${m.content}</div>`).join('')}
+        ${transcript.map((m: EscalateTranscriptItem) => `<div><b>${m.role === 'user' ? 'Client' : 'AI'}:</b> ${m.content}</div>`).join('')}
       </div>
     `;
     await sgMail.send({
@@ -47,7 +47,8 @@ export async function POST(req: NextRequest) {
       html,
     });
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ error: 'Failed to escalate.', details: error?.message || String(error) }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: 'Failed to escalate.', details: message }, { status: 500 });
   }
 } 
