@@ -61,13 +61,14 @@ export async function POST(req: NextRequest) {
         },
         8000 // 8 seconds
       );
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'AbortError') {
         console.error('Gemini API request timed out');
         return NextResponse.json({ success: false, error: 'AI service timed out. Please try again later.' }, { status: 504 });
       }
       console.error('Gemini API fetch error:', err);
-      return NextResponse.json({ success: false, error: 'AI service error: ' + (err.message || String(err)) }, { status: 502 });
+      const message = (err && typeof err === 'object' && 'message' in err) ? (err as { message: string }).message : String(err);
+      return NextResponse.json({ success: false, error: 'AI service error: ' + message }, { status: 502 });
     }
     console.log('Gemini API response status:', res.status);
     if (!res.body) {
@@ -88,8 +89,9 @@ export async function POST(req: NextRequest) {
         'Connection': 'keep-alive',
       },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Gemini API error:', err);
-    return NextResponse.json({ error: 'AI error', details: err instanceof Error ? err.message : String(err) }, { status: 500 });
+    const message = (err && typeof err === 'object' && 'message' in err) ? (err as { message: string }).message : String(err);
+    return NextResponse.json({ error: 'AI error', details: message }, { status: 500 });
   }
 } 
