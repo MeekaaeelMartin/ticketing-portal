@@ -313,7 +313,7 @@ export default function SupportAIPage() {
         position: 'relative',
         transition: 'all 0.3s cubic-bezier(.4,0,.2,1)',
       }}>
-        <h2 style={{ color: '#2aff8f', marginBottom: 8, fontWeight: 800, fontSize: 28 }}>Hello, {userInfo.name.split(' ')[0] || 'there'}! <span style={{ fontWeight: 400, color: '#1de982', fontSize: 20 }}>I'm your AI chatbot. How can I help you today?</span></h2>
+        <h2 style={{ color: '#2aff8f', marginBottom: 8, fontWeight: 800, fontSize: 28 }}>Hello, {userInfo.name.split(' ')[0] || 'there'}! <span style={{ fontWeight: 400, color: '#1de982', fontSize: 20 }}>I&apos;m your AI chatbot. How can I help you today?</span></h2>
         <div style={{ marginBottom: 18, color: '#eafff0', fontSize: 16, background: 'rgba(24,80,60,0.7)', borderRadius: 10, padding: 18, border: '1.5px solid #2aff8f', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div><b>Name:</b> {userInfo.name}</div>
           <div><b>Email:</b> {userInfo.email}</div>
