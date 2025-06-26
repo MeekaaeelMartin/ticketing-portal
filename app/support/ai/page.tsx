@@ -198,7 +198,7 @@ export default function SupportAIPage() {
         });
         setLoading(false);
       }
-    } catch (e) {
+    } catch {
       setError("Network error.");
       setMessages((msgs) => {
         // Remove the last empty AI message
