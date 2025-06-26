@@ -64,22 +64,22 @@ export async function POST(req: NextRequest) {
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'AbortError') {
         console.error('Gemini API request timed out');
-        return NextResponse.json({ success: false, error: 'AI service timed out. Please try again later.' }, { status: 504 });
+        return NextResponse.json({ success: false, error: 'Gemini API request timed out.' }, { status: 504 });
       }
       console.error('Gemini API fetch error:', err);
       const message = (err && typeof err === 'object' && 'message' in err) ? (err as { message: string }).message : String(err);
-      return NextResponse.json({ success: false, error: 'AI service error: ' + message }, { status: 502 });
+      return NextResponse.json({ success: false, error: 'Gemini API fetch error: ' + message }, { status: 502 });
     }
     console.log('Gemini API response status:', res.status);
     if (!res.body) {
       const text = await res.text().catch(() => '');
       console.error('No response body from Gemini:', res.status, text);
-      return NextResponse.json({ success: false, error: 'No response body from Gemini.' }, { status: 500 });
+      return NextResponse.json({ success: false, error: `No response body from Gemini. Status: ${res.status}. Body: ${text}` }, { status: 500 });
     }
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       console.error('Gemini API error response:', res.status, text);
-      return NextResponse.json({ success: false, error: 'AI service error: ' + text }, { status: res.status });
+      return NextResponse.json({ success: false, error: `Gemini API error: Status ${res.status}. Body: ${text}` }, { status: res.status });
     }
     // Stream the response to the client
     return new Response(res.body, {
@@ -92,6 +92,6 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     console.error('Gemini API error:', err);
     const message = (err && typeof err === 'object' && 'message' in err) ? (err as { message: string }).message : String(err);
-    return NextResponse.json({ error: 'AI error', details: message }, { status: 500 });
+    return NextResponse.json({ error: 'Gemini API error: ' + message }, { status: 500 });
   }
 } 
