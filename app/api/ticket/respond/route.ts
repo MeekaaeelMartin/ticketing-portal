@@ -37,15 +37,18 @@ export async function POST(req: NextRequest) {
       await db.collection('ticket_messages').insertOne({
         ticketId,
         role: 'user',
-        message: lastMsg.message,
+        message: lastMsg.content,
         timestamp: new Date(),
       });
     }
     // Prepare messages for OpenAI
     const chatMessages = [
       { role: 'system', content: SYSTEM_PROMPT },
-      ...response.map((m: TicketRespondMessage) => ({ role: m.role, content: m.content })),
-    ];
+      ...response.map((m: TicketRespondMessage) => ({
+        role: m.role === 'ai' ? 'assistant' : m.role,
+        content: m.content
+      })),
+    ] as any;
     const completion = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: chatMessages,
