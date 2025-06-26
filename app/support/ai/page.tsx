@@ -859,6 +859,12 @@ export default function SupportAIPage() {
                   aria-label="Type your message"
                   onFocus={e => e.currentTarget.style.border = '1.5px solid #2aff8f'}
                   onBlur={e => e.currentTarget.style.border = '1.5px solid #184d36'}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey && !loading && input.trim()) {
+                      e.preventDefault();
+                      (e.target as HTMLInputElement).form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                    }
+                  }}
                 />
                 <button type="submit" style={{
                   padding: '14px 22px',
