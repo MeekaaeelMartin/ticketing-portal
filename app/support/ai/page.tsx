@@ -86,6 +86,25 @@ export default function SupportAIPage() {
         body: JSON.stringify({ userInfo: userInfoOverride || userInfo, messages: [...messages, { role: "user", content: userMsg }] }),
       });
       const contentType = res.headers.get("content-type") || "";
+      if (!res.ok) {
+        // Try to parse error message from backend
+        let errorMsg = "AI service error.";
+        try {
+          const errData = await res.json();
+          errorMsg = errData.error || errData.details || errData.message || errorMsg;
+        } catch {}
+        setError(errorMsg);
+        setLoading(false);
+        setMessages((msgs) => {
+          // Remove the last empty AI message
+          const updated = [...msgs];
+          let lastIdx = updated.length - 1;
+          while (lastIdx >= 0 && updated[lastIdx].role !== "ai") lastIdx--;
+          if (lastIdx >= 0) updated.splice(lastIdx, 1);
+          return updated;
+        });
+        return;
+      }
       if (contentType.includes("application/json")) {
         // Non-streaming: parse the whole response at once
         const data = await res.json();
@@ -97,6 +116,19 @@ export default function SupportAIPage() {
         } else {
           const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
           if (typeof text === "string") aiContent += text;
+        }
+        if (!aiContent) {
+          setError("AI did not return a response.");
+          setMessages((msgs) => {
+            // Remove the last empty AI message
+            const updated = [...msgs];
+            let lastIdx = updated.length - 1;
+            while (lastIdx >= 0 && updated[lastIdx].role !== "ai") lastIdx--;
+            if (lastIdx >= 0) updated.splice(lastIdx, 1);
+            return updated;
+          });
+          setLoading(false);
+          return;
         }
         setMessages((msgs) => {
           const updated = [...msgs];
@@ -112,6 +144,7 @@ export default function SupportAIPage() {
         let done = false;
         const decoder = new TextDecoder();
         let buffer = "";
+        let gotContent = false;
         while (!done) {
           const { value, done: doneReading } = await reader.read();
           done = doneReading;
@@ -126,6 +159,7 @@ export default function SupportAIPage() {
                 const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (typeof text === "string") {
                   aiContent += text;
+                  gotContent = true;
                   setMessages((msgs) => {
                     const updated = [...msgs];
                     let lastIdx = updated.length - 1;
@@ -140,13 +174,40 @@ export default function SupportAIPage() {
             }
           }
         }
+        if (!gotContent) {
+          setError("AI did not return a response.");
+          setMessages((msgs) => {
+            // Remove the last empty AI message
+            const updated = [...msgs];
+            let lastIdx = updated.length - 1;
+            while (lastIdx >= 0 && updated[lastIdx].role !== "ai") lastIdx--;
+            if (lastIdx >= 0) updated.splice(lastIdx, 1);
+            return updated;
+          });
+        }
         setLoading(false);
       } else {
-        setError("No response body");
+        setError("No response body from AI service.");
+        setMessages((msgs) => {
+          // Remove the last empty AI message
+          const updated = [...msgs];
+          let lastIdx = updated.length - 1;
+          while (lastIdx >= 0 && updated[lastIdx].role !== "ai") lastIdx--;
+          if (lastIdx >= 0) updated.splice(lastIdx, 1);
+          return updated;
+        });
         setLoading(false);
       }
-    } catch {
+    } catch (e) {
       setError("Network error.");
+      setMessages((msgs) => {
+        // Remove the last empty AI message
+        const updated = [...msgs];
+        let lastIdx = updated.length - 1;
+        while (lastIdx >= 0 && updated[lastIdx].role !== "ai") lastIdx--;
+        if (lastIdx >= 0) updated.splice(lastIdx, 1);
+        return updated;
+      });
       setLoading(false);
     }
   };
