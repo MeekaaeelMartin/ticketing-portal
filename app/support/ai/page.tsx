@@ -145,7 +145,7 @@ export default function SupportAIPage() {
         setError("No response body");
         setLoading(false);
       }
-    } catch (err) {
+    } catch {
       setError("Network error.");
       setLoading(false);
     }
