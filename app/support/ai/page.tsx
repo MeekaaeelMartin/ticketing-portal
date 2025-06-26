@@ -313,49 +313,72 @@ export default function SupportAIPage() {
         position: 'relative',
         transition: 'all 0.3s cubic-bezier(.4,0,.2,1)',
       }}>
-        <div style={{ display: 'flex', gap: 16, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ color: '#eafff0', fontWeight: 600, fontSize: 16 }}>How urgent is your request?</span>
-          <button
-            style={{
-              background: urgency === 'urgent' ? 'linear-gradient(90deg, #ff4e4e 0%, #ffb84e 100%)' : 'linear-gradient(90deg, #2aff8f 0%, #1de982 100%)',
-              color: urgency === 'urgent' ? '#fff' : '#0a1f1a',
-              border: '1.5px solid #2aff8f',
-              borderRadius: 8,
-              fontWeight: 700,
-              fontSize: 16,
-              padding: '10px 24px',
-              cursor: 'pointer',
-              transition: 'background 0.2s, transform 0.1s',
-              boxShadow: '0 2px 8px 0 rgba(42,255,143,0.12)',
-            }}
-            onClick={() => setUrgency('urgent')}
-            aria-pressed={urgency === 'urgent'}
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ color: '#eafff0', fontWeight: 600, fontSize: 16 }}>How urgent is your request?</span>
+            <button
+              style={{
+                background: urgency === 'urgent' ? 'linear-gradient(90deg, #ff4e4e 0%, #ffb84e 100%)' : 'linear-gradient(90deg, #2aff8f 0%, #1de982 100%)',
+                color: urgency === 'urgent' ? '#fff' : '#0a1f1a',
+                border: '1.5px solid #2aff8f',
+                borderRadius: 8,
+                fontWeight: 700,
+                fontSize: 16,
+                padding: '10px 24px',
+                cursor: 'pointer',
+                transition: 'background 0.2s, transform 0.1s',
+                boxShadow: '0 2px 8px 0 rgba(42,255,143,0.12)',
+              }}
+              onClick={() => setUrgency('urgent')}
+              aria-pressed={urgency === 'urgent'}
+            >
+              Urgent
+            </button>
+            <button
+              style={{
+                background: urgency === 'not_urgent' ? 'linear-gradient(90deg, #1de982 0%, #0fa36b 100%)' : 'linear-gradient(90deg, #eafff0 0%, #b2f5ea 100%)',
+                color: urgency === 'not_urgent' ? '#fff' : '#0a1f1a',
+                border: '1.5px solid #1de982',
+                borderRadius: 8,
+                fontWeight: 700,
+                fontSize: 16,
+                padding: '10px 24px',
+                cursor: 'pointer',
+                transition: 'background 0.2s, transform 0.1s',
+                boxShadow: '0 2px 8px 0 rgba(15,163,107,0.12)',
+              }}
+              onClick={() => setUrgency('not_urgent')}
+              aria-pressed={urgency === 'not_urgent'}
+            >
+              Not so urgent
+            </button>
+            {urgency && (
+              <span style={{ color: urgency === 'urgent' ? '#ff4e4e' : '#1de982', fontWeight: 700, marginLeft: 12 }}>
+                {urgency === 'urgent' ? 'Marked as Urgent' : 'Marked as Not so urgent'}
+              </span>
+            )}
+          </div>
+          <button style={{ background: 'linear-gradient(90deg, #2aff8f 0%, #1de982 100%)', color: '#0a1f1a', border: '1.5px solid #2aff8f', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer', transition: 'background 0.2s, transform 0.1s', boxShadow: '0 2px 8px 0 rgba(42,255,143,0.12)' }} onClick={handleEscalate} disabled={loading}
+            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
+            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
           >
-            Urgent
+            Request help from a person
           </button>
-          <button
-            style={{
-              background: urgency === 'not_urgent' ? 'linear-gradient(90deg, #1de982 0%, #0fa36b 100%)' : 'linear-gradient(90deg, #eafff0 0%, #b2f5ea 100%)',
-              color: urgency === 'not_urgent' ? '#fff' : '#0a1f1a',
-              border: '1.5px solid #1de982',
-              borderRadius: 8,
-              fontWeight: 700,
-              fontSize: 16,
-              padding: '10px 24px',
-              cursor: 'pointer',
-              transition: 'background 0.2s, transform 0.1s',
-              boxShadow: '0 2px 8px 0 rgba(15,163,107,0.12)',
-            }}
-            onClick={() => setUrgency('not_urgent')}
-            aria-pressed={urgency === 'not_urgent'}
+          <button style={{ background: 'linear-gradient(90deg, #1de982 0%, #0fa36b 100%)', color: '#fff', border: '1.5px solid #1de982', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer', transition: 'background 0.2s, transform 0.1s', boxShadow: '0 2px 8px 0 rgba(15,163,107,0.12)' }} onClick={() => setExited(true)
+            } onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
+            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
           >
-            Not so urgent
+            Exit – I got the help I needed
           </button>
-          {urgency && (
-            <span style={{ color: urgency === 'urgent' ? '#ff4e4e' : '#1de982', fontWeight: 700, marginLeft: 12 }}>
-              {urgency === 'urgent' ? 'Marked as Urgent' : 'Marked as Not so urgent'}
-            </span>
-          )}
+          <button style={{ background: 'linear-gradient(90deg, #0fa36b 0%, #1de982 100%)', color: '#fff', border: '1.5px solid #0fa36b', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer', transition: 'background 0.2s, transform 0.1s', boxShadow: '0 2px 8px 0 rgba(15,163,107,0.12)' }} onClick={() => router.push('/support')}
+            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
+            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            Log another ticket
+          </button>
         </div>
         <h2 style={{ color: '#2aff8f', marginBottom: 8, fontWeight: 800, fontSize: 28 }}>Hello, {userInfo.name.split(' ')[0] || 'there'}! <span style={{ fontWeight: 400, color: '#1de982', fontSize: 20 }}>I&apos;m your AI chatbot. How can I help you today?</span></h2>
         <div style={{ marginBottom: 18, color: '#eafff0', fontSize: 16, background: 'rgba(24,80,60,0.7)', borderRadius: 10, padding: 18, border: '1.5px solid #2aff8f', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -837,80 +860,6 @@ export default function SupportAIPage() {
           {muted ? '🔇' : '🔔'}
         </button>
         {error && <div style={{ color: 'var(--color-error)', marginBottom: 10 }}>{error}</div>}
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
-          <button style={{ background: 'linear-gradient(90deg, #2aff8f 0%, #1de982 100%)', color: '#0a1f1a', border: '1.5px solid #2aff8f', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer', transition: 'background 0.2s, transform 0.1s', boxShadow: '0 2px 8px 0 rgba(42,255,143,0.12)' }} onClick={handleEscalate} disabled={loading}
-            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
-            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            Request help from a person
-          </button>
-          <button style={{ background: 'linear-gradient(90deg, #1de982 0%, #0fa36b 100%)', color: '#fff', border: '1.5px solid #1de982', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer', transition: 'background 0.2s, transform 0.1s', boxShadow: '0 2px 8px 0 rgba(15,163,107,0.12)' }} onClick={() => setExited(true)
-            } onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
-            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            Exit – I got the help I needed
-          </button>
-          <button style={{ background: 'linear-gradient(90deg, #0fa36b 0%, #1de982 100%)', color: '#fff', border: '1.5px solid #0fa36b', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer', transition: 'background 0.2s, transform 0.1s', boxShadow: '0 2px 8px 0 rgba(15,163,107,0.12)' }} onClick={() => router.push('/support')}
-            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
-            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            Log another ticket
-          </button>
-        </div>
-        <style>{`
-          @keyframes fadeInChat {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes fadeInWelcome {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes avatarBounce {
-            0% { transform: scale(0.7); }
-            60% { transform: scale(1.15); }
-            100% { transform: scale(1); }
-          }
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-          @keyframes bgMove {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
-          }
-          .markdown-body h1, .markdown-body h2, .markdown-body h3 {
-            color: #2aff8f;
-            margin: 12px 0 6px 0;
-            font-weight: 700;
-          }
-          .markdown-body ul, .markdown-body ol {
-            margin: 8px 0 8px 20px;
-          }
-          .markdown-body code {
-            background: #184d36;
-            color: #2aff8f;
-            border-radius: 4px;
-            padding: 2px 6px;
-            font-size: 15px;
-          }
-          .markdown-body pre {
-            background: #0a1f1a;
-            color: #2aff8f;
-            border-radius: 8px;
-            padding: 12px;
-            margin: 8px 0;
-            overflow-x: auto;
-            font-size: 15px;
-          }
-          .markdown-body a {
-            color: #2aff8f;
-            text-decoration: underline;
-          }
-        `}</style>
       </section>
     </main>
   );
