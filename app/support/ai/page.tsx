@@ -874,14 +874,6 @@ export default function SupportAIPage() {
             Log another ticket
           </button>
         </div>
-        <button
-          onClick={() => setMuted(m => !m)}
-          aria-label={muted ? 'Unmute notification sounds' : 'Mute notification sounds'}
-          style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', fontSize: 20, cursor: 'pointer', marginBottom: 10, float: 'right', transition: 'color 0.2s' }}
-          title={muted ? 'Unmute notification sounds' : 'Mute notification sounds'}
-        >
-          {muted ? '🔇' : '🔔'}
-        </button>
         {error && <div style={{ color: 'var(--color-error)', marginBottom: 10 }}>{error}</div>}
       </section>
     </main>
