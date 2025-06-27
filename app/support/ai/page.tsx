@@ -374,29 +374,6 @@ export default function SupportAIPage() {
         position: 'relative',
         transition: 'all 0.3s cubic-bezier(.4,0,.2,1)',
       }}>
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
-          <button style={{ background: 'linear-gradient(90deg, #2aff8f 0%, #1de982 100%)', color: '#0a1f1a', border: '1.5px solid #2aff8f', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer', transition: 'background 0.2s, transform 0.1s', boxShadow: '0 2px 8px 0 rgba(42,255,143,0.12)' }} onClick={handleEscalate} disabled={loading}
-            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
-            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            Request help from a person
-          </button>
-          <button style={{ background: 'linear-gradient(90deg, #1de982 0%, #0fa36b 100%)', color: '#fff', border: '1.5px solid #1de982', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer', transition: 'background 0.2s, transform 0.1s', boxShadow: '0 2px 8px 0 rgba(15,163,107,0.12)' }} onClick={() => setExited(true)
-            } onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
-            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            Exit – I got the help I needed
-          </button>
-          <button style={{ background: 'linear-gradient(90deg, #0fa36b 0%, #1de982 100%)', color: '#fff', border: '1.5px solid #0fa36b', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer', transition: 'background 0.2s, transform 0.1s', boxShadow: '0 2px 8px 0 rgba(15,163,107,0.12)' }} onClick={() => router.push('/support')}
-            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
-            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            Log another ticket
-          </button>
-        </div>
         <h2 style={{ color: '#2aff8f', marginBottom: 8, fontWeight: 800, fontSize: 28 }}>Hello, {userInfo.name.split(' ')[0] || 'there'}! <span style={{ fontWeight: 400, color: '#1de982', fontSize: 20 }}>I&apos;m your AI chatbot. How can I help you today?</span></h2>
         <div style={{ marginBottom: 18, color: '#eafff0', fontSize: 16, background: 'rgba(24,80,60,0.7)', borderRadius: 10, padding: 18, border: '1.5px solid #2aff8f', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div><b>Name:</b> {userInfo.name}</div>
