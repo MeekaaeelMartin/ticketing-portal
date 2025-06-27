@@ -88,11 +88,21 @@ export default function SupportAIPage() {
       const contentType = res.headers.get("content-type") || "";
       if (!res.ok) {
         // Try to parse error message from backend
-        let errorMsg = "AI service error.";
+        let errorMsg = `AI service error. (HTTP ${res.status})`;
         try {
           const errData = await res.json();
-          errorMsg = errData.error || errData.details || errData.message || errorMsg;
-        } catch {}
+          errorMsg =
+            (errData.error ? `AI error: ${errData.error}` : '') +
+            (errData.details ? `\nDetails: ${errData.details}` : '') +
+            (errData.message ? `\nMessage: ${errData.message}` : '') +
+            `\n(HTTP ${res.status})`;
+        } catch (e) {
+          // If JSON parse fails, try to get text
+          try {
+            const text = await res.text();
+            errorMsg += `\nRaw response: ${text}`;
+          } catch {}
+        }
         setError(errorMsg);
         setLoading(false);
         setMessages((msgs) => {
