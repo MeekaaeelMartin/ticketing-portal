@@ -27,7 +27,7 @@ export default function SupportAIPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const [muted, setMuted] = useState(false);
+  const [muted] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [fullscreen, setFullscreen] = useState(false);
@@ -222,8 +222,8 @@ export default function SupportAIPage() {
     }
   };
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSend = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!input.trim() || loading) return;
     setMessages((msgs) => [...msgs, { role: "user", content: input }]);
     await sendToAI(input);
@@ -502,8 +502,8 @@ export default function SupportAIPage() {
                               onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
                               onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
                               onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                              onFocus={e => e.currentTarget.style.boxShadow = '0 0 0 2px #2aff8f'}
-                              onBlur={e => e.currentTarget.style.boxShadow = 'none'}
+                              onFocus={ev => ev.currentTarget.style.boxShadow = '0 0 0 2px #2aff8f'}
+                              onBlur={ev => ev.currentTarget.style.boxShadow = 'none'}
                               title={msg.role === 'user' ? 'You' : 'AI'}
                             >
                               {msg.role === 'ai' ? (
@@ -587,8 +587,14 @@ export default function SupportAIPage() {
                     placeholder={loading ? 'AI is thinking...' : 'Type your message...'}
                     disabled={loading}
                     aria-label="Type your message"
-                    onFocus={e => e.currentTarget.style.border = '1.5px solid #2aff8f'}
-                    onBlur={e => e.currentTarget.style.border = '1.5px solid #184d36'}
+                    onFocus={ev => ev.currentTarget.style.border = '1.5px solid #2aff8f'}
+                    onBlur={ev => ev.currentTarget.style.border = '1.5px solid #184d36'}
+                    onKeyDown={ev => {
+                      if (ev.key === 'Enter' && !ev.shiftKey && !loading && input.trim()) {
+                        ev.preventDefault();
+                        (ev.target as HTMLInputElement).form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                      }
+                    }}
                   />
                   <button type="submit" style={{
                     padding: '18px 32px',
@@ -703,8 +709,8 @@ export default function SupportAIPage() {
                         onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
                         onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
                         onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                        onFocus={e => e.currentTarget.style.boxShadow = '0 0 0 2px #2aff8f'}
-                        onBlur={e => e.currentTarget.style.boxShadow = 'none'}
+                        onFocus={ev => ev.currentTarget.style.boxShadow = '0 0 0 2px #2aff8f'}
+                        onBlur={ev => ev.currentTarget.style.boxShadow = 'none'}
                         title={msg.role === 'user' ? 'You' : 'AI'}
                       >
                         {msg.role === 'ai' ? (
@@ -786,12 +792,12 @@ export default function SupportAIPage() {
                   placeholder={loading ? 'AI is thinking...' : 'Type your message...'}
                   disabled={loading}
                   aria-label="Type your message"
-                  onFocus={e => e.currentTarget.style.border = '1.5px solid #2aff8f'}
-                  onBlur={e => e.currentTarget.style.border = '1.5px solid #184d36'}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && !e.shiftKey && !loading && input.trim()) {
-                      e.preventDefault();
-                      (e.target as HTMLInputElement).form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                  onFocus={ev => ev.currentTarget.style.border = '1.5px solid #2aff8f'}
+                  onBlur={ev => ev.currentTarget.style.border = '1.5px solid #184d36'}
+                  onKeyDown={ev => {
+                    if (ev.key === 'Enter' && !ev.shiftKey && !loading && input.trim()) {
+                      ev.preventDefault();
+                      (ev.target as HTMLInputElement).form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
                     }
                   }}
                 />
