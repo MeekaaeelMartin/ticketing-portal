@@ -308,21 +308,7 @@ export default function SupportAIPage() {
             Have a look at our <a href="https://tecbot.co.za" target="_blank" rel="noopener noreferrer" style={{ color: '#2aff8f', textDecoration: 'underline', fontWeight: 600 }}>website</a> or log another ticket below.
           </p>
           <div style={{ display: 'flex', gap: 16, marginTop: 28, marginBottom: 18 }}>
-            <button
-              style={{ background: urgency === 'urgent' ? 'linear-gradient(90deg, #ff4e4e 0%, #ffb84e 100%)' : 'linear-gradient(90deg, #2aff8f 0%, #1de982 100%)', color: urgency === 'urgent' ? '#fff' : '#0a1f1a', border: '1.5px solid #2aff8f', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer' }}
-              onClick={() => setUrgency('urgent')}
-              aria-pressed={urgency === 'urgent'}
-            >
-              Urgent
-            </button>
-            <button
-              style={{ background: urgency === 'not_urgent' ? 'linear-gradient(90deg, #1de982 0%, #0fa36b 100%)' : 'linear-gradient(90deg, #eafff0 0%, #b2f5ea 100%)', color: urgency === 'not_urgent' ? '#fff' : '#0a1f1a', border: '1.5px solid #1de982', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer' }}
-              onClick={() => setUrgency('not_urgent')}
-              aria-pressed={urgency === 'not_urgent'}
-            >
-              Not so urgent
-            </button>
-            <button style={{ background: 'linear-gradient(90deg, #1de982 0%, #0fa36b 100%)', color: '#fff', border: '1.5px solid #1de982', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer' }} onClick={handleEscalate}>Request help from a person</button>
+            <button style={{ background: 'linear-gradient(90deg, #1de982 0%, #0fa36b 100%)', color: '#fff', border: '1.5px solid #1de982', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer' }} onClick={() => router.push('/support')}>Log another ticket</button>
           </div>
         </section>
       </main>
@@ -862,6 +848,22 @@ export default function SupportAIPage() {
           )}
         </div>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 24, alignItems: 'center', justifyContent: 'flex-start' }}>
+          <div style={{ display: 'flex', gap: 16 }}>
+            <button
+              style={{ background: urgency === 'urgent' ? 'linear-gradient(90deg, #ff4e4e 0%, #ffb84e 100%)' : 'linear-gradient(90deg, #2aff8f 0%, #1de982 100%)', color: urgency === 'urgent' ? '#fff' : '#0a1f1a', border: '1.5px solid #2aff8f', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer' }}
+              onClick={() => setUrgency('urgent')}
+              aria-pressed={urgency === 'urgent'}
+            >
+              Urgent
+            </button>
+            <button
+              style={{ background: urgency === 'not_urgent' ? 'linear-gradient(90deg, #1de982 0%, #0fa36b 100%)' : 'linear-gradient(90deg, #eafff0 0%, #b2f5ea 100%)', color: urgency === 'not_urgent' ? '#fff' : '#0a1f1a', border: '1.5px solid #1de982', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer' }}
+              onClick={() => setUrgency('not_urgent')}
+              aria-pressed={urgency === 'not_urgent'}
+            >
+              Not so urgent
+            </button>
+          </div>
           <button style={{ background: 'linear-gradient(90deg, #2aff8f 0%, #1de982 100%)', color: '#0a1f1a', border: '1.5px solid #2aff8f', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer', transition: 'background 0.2s, transform 0.1s', boxShadow: '0 2px 8px 0 rgba(42,255,143,0.12)' }} onClick={handleEscalate} disabled={loading}
             onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
             onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
