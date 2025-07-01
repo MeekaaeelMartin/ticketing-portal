@@ -96,7 +96,7 @@ export default function SupportAIPage() {
             (errData.details ? `\nDetails: ${errData.details}` : '') +
             (errData.message ? `\nMessage: ${errData.message}` : '') +
             `\n(HTTP ${res.status})`;
-        } catch (e) {
+        } catch {
           // If JSON parse fails, try to get text
           try {
             const text = await res.text();
