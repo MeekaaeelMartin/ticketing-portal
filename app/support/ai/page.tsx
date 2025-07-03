@@ -854,22 +854,17 @@ export default function SupportAIPage() {
           )}
         </div>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 24, alignItems: 'center', justifyContent: 'flex-start' }}>
-          <div style={{ display: 'flex', gap: 16 }}>
-            <button
-              style={{ background: urgency === 'urgent' ? 'linear-gradient(90deg, #ff4e4e 0%, #ffb84e 100%)' : 'linear-gradient(90deg, #2aff8f 0%, #1de982 100%)', color: urgency === 'urgent' ? '#fff' : '#0a1f1a', border: '1.5px solid #2aff8f', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer' }}
-              onClick={() => setUrgency('urgent')}
-              aria-pressed={urgency === 'urgent'}
-            >
-              Urgent
-            </button>
-            <button
-              style={{ background: urgency === 'not_urgent' ? 'linear-gradient(90deg, #1de982 0%, #0fa36b 100%)' : 'linear-gradient(90deg, #eafff0 0%, #b2f5ea 100%)', color: urgency === 'not_urgent' ? '#fff' : '#0a1f1a', border: '1.5px solid #1de982', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer' }}
-              onClick={() => setUrgency('not_urgent')}
-              aria-pressed={urgency === 'not_urgent'}
-            >
-              Not so urgent
-            </button>
-          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 16, color: urgency === 'urgent' ? '#ff4e4e' : '#eafff0', cursor: 'pointer', marginRight: 8 }}>
+            <input
+              type="radio"
+              checked={urgency === 'urgent'}
+              onChange={() => setUrgency('urgent')}
+              style={{ accentColor: '#ff4e4e', width: 18, height: 18, marginRight: 6 }}
+              name="urgency"
+              aria-checked={urgency === 'urgent'}
+            />
+            Urgent
+          </label>
           <button style={{ background: 'linear-gradient(90deg, #2aff8f 0%, #1de982 100%)', color: '#0a1f1a', border: '1.5px solid #2aff8f', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer', transition: 'background 0.2s, transform 0.1s', boxShadow: '0 2px 8px 0 rgba(42,255,143,0.12)' }} onClick={handleEscalate} disabled={loading}
             onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
             onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
@@ -877,6 +872,8 @@ export default function SupportAIPage() {
           >
             Request help from a person
           </button>
+        </div>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 12, alignItems: 'center', justifyContent: 'flex-start' }}>
           <button style={{ background: 'linear-gradient(90deg, #0fa36b 0%, #1de982 100%)', color: '#fff', border: '1.5px solid #0fa36b', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '10px 24px', cursor: 'pointer', transition: 'background 0.2s, transform 0.1s', boxShadow: '0 2px 8px 0 rgba(15,163,107,0.12)' }} onClick={() => router.push('/support')}
             onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
             onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
