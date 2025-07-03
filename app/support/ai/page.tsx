@@ -238,7 +238,7 @@ export default function SupportAIPage() {
       const res = await fetch("/api/escalate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userInfo, transcript: messages }),
+        body: JSON.stringify({ userInfo, transcript: messages, urgency }),
       });
       if (!res.ok) {
         const data = await res.json();

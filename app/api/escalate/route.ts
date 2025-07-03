@@ -23,13 +23,14 @@ interface EscalateTranscriptItem {
 
 export async function POST(req: NextRequest) {
   try {
-    const { userInfo, transcript }: { userInfo: EscalateUserInfo; transcript: EscalateTranscriptItem[] } = await req.json();
+    const { userInfo, transcript, urgency }: { userInfo: EscalateUserInfo; transcript: EscalateTranscriptItem[]; urgency?: string } = await req.json();
     if (!userInfo || !transcript) {
       return NextResponse.json({ success: false, error: 'Missing userInfo or transcript.' }, { status: 400 });
     }
     const subject = `Escalated Support Ticket from ${userInfo.name}`;
     const html = `
       <h2>Escalated Support Ticket</h2>
+      ${urgency === 'urgent' ? '<p style="color:#ff2222;font-weight:bold;font-size:18px;">URGENT</p>' : ''}
       <p><b>Name:</b> ${userInfo.name}</p>
       <p><b>Email:</b> ${userInfo.email}</p>
       <p><b>Phone:</b> ${userInfo.phone}</p>
