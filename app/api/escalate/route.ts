@@ -48,8 +48,14 @@ export async function POST(req: NextRequest) {
       html,
     });
     return NextResponse.json({ success: true });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: 'Failed to escalate.', details: message }, { status: 500 });
+  } catch (err) {
+    console.error('API error:', err);
+    return NextResponse.json(
+      {
+        success: false,
+        error: err instanceof Error ? (err.stack || err.message) : String(err),
+      },
+      { status: 500 }
+    );
   }
 } 

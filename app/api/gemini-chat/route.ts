@@ -96,9 +96,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Gemini API error (inner): ' + message }, { status: 500 });
     }
   } catch (err: unknown) {
-    // Top-level catch for any unhandled errors
-    console.error('Gemini API error (outer):', err);
-    const message = (err && typeof err === 'object' && 'message' in err) ? (err as { message: string }).message : String(err);
-    return NextResponse.json({ error: 'Gemini API error (outer): ' + message }, { status: 500 });
+    console.error('API error:', err);
+    return NextResponse.json(
+      {
+        success: false,
+        error: err instanceof Error ? (err.stack || err.message) : String(err),
+      },
+      { status: 500 }
+    );
   }
 } 
