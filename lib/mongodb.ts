@@ -29,7 +29,8 @@ export async function getDb(): Promise<Db> {
     const client = await clientPromiseConst;
     return client.db(); // Use default DB from URI
   } catch (err) {
-    console.error('Failed to connect to MongoDB:', err);
-    throw new Error('Failed to connect to MongoDB. Please check your connection string and network access.');
+    console.error('MongoDB connection error:', err);
+    // Optionally, you can throw a more detailed error or return a custom error object
+    throw new Error(`MongoDB connection failed: ${err instanceof Error ? err.stack || err.message : String(err)}`);
   }
 } 
