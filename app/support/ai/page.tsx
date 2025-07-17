@@ -13,7 +13,7 @@ interface UserInfo {
   message: string;
 }
 
-type ChatMessage = { role: "user" | "ai"; content: string };
+type ChatMessage = { role: "user" | "ai"; content: string; fallback?: boolean };
 
 export default function SupportAIPage() {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
@@ -96,6 +96,18 @@ export default function SupportAIPage() {
             (errData.details ? `\nDetails: ${errData.details}` : '') +
             (errData.message ? `\nMessage: ${errData.message}` : '') +
             `\n(HTTP ${res.status})`;
+          // If fallback generic response is present, show it
+          if (errData.fallback && errData.answer) {
+            setMessages((msgs) => {
+              const updated = [...msgs];
+              let lastIdx = updated.length - 1;
+              while (lastIdx >= 0 && updated[lastIdx].role !== "ai") lastIdx--;
+              if (lastIdx >= 0) updated[lastIdx] = { ...updated[lastIdx], content: errData.answer, fallback: true };
+              return updated;
+            });
+            setLoading(false);
+            return;
+          }
         } catch {
           // If JSON parse fails, try to get text
           try {
@@ -118,6 +130,17 @@ export default function SupportAIPage() {
       if (contentType.includes("application/json")) {
         // Non-streaming: parse the whole response at once
         const data = await res.json();
+        if (data.fallback && data.answer) {
+          setMessages((msgs) => {
+            const updated = [...msgs];
+            let lastIdx = updated.length - 1;
+            while (lastIdx >= 0 && updated[lastIdx].role !== "ai") lastIdx--;
+            if (lastIdx >= 0) updated[lastIdx] = { ...updated[lastIdx], content: data.answer, fallback: true };
+            return updated;
+          });
+          setLoading(false);
+          return;
+        }
         if (Array.isArray(data)) {
           for (const chunk of data) {
             const text = chunk.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -506,6 +529,11 @@ export default function SupportAIPage() {
                               onBlur={ev => ev.currentTarget.style.boxShadow = 'none'}
                               title={msg.role === 'user' ? 'You' : 'AI'}
                             >
+                              {msg.role === 'ai' && msg.fallback && (
+                                <span style={{ marginLeft: 8, color: '#ffb300', fontWeight: 600, fontSize: 13, background: '#222', borderRadius: 6, padding: '2px 8px', border: '1px solid #ffb300' }}>
+                                  Generic response
+                                </span>
+                              )}
                               {msg.role === 'ai' ? (
                                 <ReactMarkdown
                                   components={{
@@ -713,6 +741,11 @@ export default function SupportAIPage() {
                         onBlur={ev => ev.currentTarget.style.boxShadow = 'none'}
                         title={msg.role === 'user' ? 'You' : 'AI'}
                       >
+                        {msg.role === 'ai' && msg.fallback && (
+                          <span style={{ marginLeft: 8, color: '#ffb300', fontWeight: 600, fontSize: 13, background: '#222', borderRadius: 6, padding: '2px 8px', border: '1px solid #ffb300' }}>
+                            Generic response
+                          </span>
+                        )}
                         {msg.role === 'ai' ? (
                           <ReactMarkdown
                             components={{
