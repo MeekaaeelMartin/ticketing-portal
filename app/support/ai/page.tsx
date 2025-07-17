@@ -73,14 +73,14 @@ export default function SupportAIPage() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
-  // OpenAI AI chat handler (calls backend)
+  // Gemini AI chat handler (calls backend)
   const sendToAI = async (userMsg: string, userInfoOverride?: UserInfo) => {
     setLoading(true);
     setError(null);
     let aiContent = "";
     setMessages((msgs) => [...msgs, { role: "ai", content: "" }]);
     try {
-      const res = await fetch("/api/openai-chat", {
+      const res = await fetch("/api/gemini-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userInfo: userInfoOverride || userInfo, messages: [...messages, { role: "user", content: userMsg }] }),
