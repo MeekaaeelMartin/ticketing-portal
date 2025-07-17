@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
           },
-          15000 // 15 seconds
+          120000 // 2 minutes
         );
       } catch (err: unknown) {
         if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'AbortError') {
