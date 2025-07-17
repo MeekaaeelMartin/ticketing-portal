@@ -52,24 +52,43 @@ export async function POST(req: NextRequest) {
       console.log('Sending to Gemini API:', JSON.stringify(body));
       // Use streaming endpoint with timeout
       let res;
-      try {
-        res = await fetchWithTimeout(
-          'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:streamGenerateContent?key=' + GEMINI_API_KEY,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          },
-          120000 // 2 minutes
-        );
-      } catch (err: unknown) {
-        if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'AbortError') {
-          console.error('Gemini API request timed out');
-          return NextResponse.json({ success: false, error: 'Gemini API request timed out.' }, { status: 504 });
+      let attempt = 0;
+      let maxAttempts = 2;
+      let lastError;
+      while (attempt < maxAttempts) {
+        try {
+          res = await fetchWithTimeout(
+            'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:streamGenerateContent?key=' + GEMINI_API_KEY,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            },
+            60000 // 1 minute
+          );
+          break; // Success, exit loop
+        } catch (err: any) {
+          lastError = err;
+          // Handle socket hang up (ECONNRESET)
+          if (err && (err.code === 'ECONNRESET' || err.message === 'socket hang up')) {
+            console.error('Gemini API ECONNRESET, retrying... attempt', attempt + 1);
+            attempt++;
+            if (attempt >= maxAttempts) {
+              return NextResponse.json({ success: false, error: 'The AI service took too long to respond (connection reset). Please try again.' }, { status: 504 });
+            }
+            continue;
+          }
+          if (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'AbortError') {
+            console.error('Gemini API request timed out');
+            return NextResponse.json({ success: false, error: 'Gemini API request timed out.' }, { status: 504 });
+          }
+          console.error('Gemini API fetch error:', err);
+          const message = (err && typeof err === 'object' && 'message' in err) ? (err as { message: string }).message : String(err);
+          return NextResponse.json({ success: false, error: 'Gemini API fetch error: ' + message }, { status: 502 });
         }
-        console.error('Gemini API fetch error:', err);
-        const message = (err && typeof err === 'object' && 'message' in err) ? (err as { message: string }).message : String(err);
-        return NextResponse.json({ success: false, error: 'Gemini API fetch error: ' + message }, { status: 502 });
+      }
+      if (!res) {
+        return NextResponse.json({ success: false, error: 'Gemini API request failed after retries.' }, { status: 504 });
       }
       console.log('Gemini API response status:', res.status);
       if (!res.body) {
