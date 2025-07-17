@@ -52,9 +52,8 @@ export async function POST(req: NextRequest) {
       console.log('Sending to Gemini API:', JSON.stringify(body));
       // Use streaming endpoint with timeout
       let res;
+      const maxAttempts = 2;
       let attempt = 0;
-      let maxAttempts = 2;
-      let lastError;
       while (attempt < maxAttempts) {
         try {
           res = await fetchWithTimeout(
@@ -67,10 +66,13 @@ export async function POST(req: NextRequest) {
             60000 // 1 minute
           );
           break; // Success, exit loop
-        } catch (err: any) {
-          lastError = err;
+        } catch (err: unknown) {
           // Handle socket hang up (ECONNRESET)
-          if (err && (err.code === 'ECONNRESET' || err.message === 'socket hang up')) {
+          if (
+            typeof err === 'object' && err !== null &&
+            ('code' in err && (err as { code?: string }).code === 'ECONNRESET' ||
+            'message' in err && (err as { message?: string }).message === 'socket hang up')
+          ) {
             console.error('Gemini API ECONNRESET, retrying... attempt', attempt + 1);
             attempt++;
             if (attempt >= maxAttempts) {
