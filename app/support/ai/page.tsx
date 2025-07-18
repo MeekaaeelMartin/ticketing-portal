@@ -231,8 +231,16 @@ export default function SupportAIPage() {
         });
         setLoading(false);
       }
-    } catch {
-      setError("Network error.");
+    } catch (err: any) {
+      let errorMsg = "Network error.";
+      if (err && typeof err === 'object') {
+        if (err.name === 'MongoServerSelectionError') {
+          errorMsg = `Database connection error: ${err.message}`;
+        } else if (err.message) {
+          errorMsg = `Network error: ${err.message}`;
+        }
+      }
+      setError(errorMsg + "\nPlease check your internet connection or contact support if the problem persists.");
       setMessages((msgs) => {
         // Remove the last empty AI message
         const updated = [...msgs];
