@@ -86,6 +86,7 @@ export default function SupportAIPage() {
         body: JSON.stringify({ userInfo: userInfoOverride || userInfo, messages: [...messages, { role: "user", content: userMsg }] }),
       });
       const contentType = res.headers.get("content-type") || "";
+      console.log('AI API response content-type:', contentType);
       if (!res.ok) {
         let errorMsg = `AI service error. (HTTP ${res.status})`;
         if (contentType.includes("application/json")) {
@@ -115,7 +116,10 @@ export default function SupportAIPage() {
           try {
             const text = await res.text();
             errorMsg += `\nRaw response: ${text}`;
-          } catch {}
+            console.log('AI API raw error response:', text);
+          } catch (textErr) {
+            errorMsg += `\nFailed to read raw response: ${textErr}`;
+          }
         }
         setError(errorMsg);
         setLoading(false);
@@ -129,6 +133,7 @@ export default function SupportAIPage() {
         });
         return;
       }
+      // Only handle JSON if not streaming
       if (contentType.includes("application/json")) {
         // Non-streaming: parse the whole response at once
         const data = await res.json();
@@ -143,6 +148,7 @@ export default function SupportAIPage() {
           setLoading(false);
           return;
         }
+        let aiContent = "";
         if (Array.isArray(data)) {
           for (const chunk of data) {
             const text = chunk.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -173,8 +179,10 @@ export default function SupportAIPage() {
           return updated;
         });
         setLoading(false);
-      } else if (res.body) {
-        // Streaming logic (as before)
+        return;
+      }
+      // If not JSON, handle streaming as before
+      if (res.body) {
         const reader = res.body.getReader();
         let done = false;
         const decoder = new TextDecoder();
@@ -221,6 +229,7 @@ export default function SupportAIPage() {
           });
         }
         setLoading(false);
+        return;
       } else {
         setError("No response body from AI service.");
         setMessages((msgs) => {
@@ -232,6 +241,7 @@ export default function SupportAIPage() {
           return updated;
         });
         setLoading(false);
+        return;
       }
     } catch (err: unknown) {
       let errorMsg = "Network error.";
