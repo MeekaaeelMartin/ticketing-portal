@@ -87,29 +87,31 @@ export default function SupportAIPage() {
       });
       const contentType = res.headers.get("content-type") || "";
       if (!res.ok) {
-        // Try to parse error message from backend
         let errorMsg = `AI service error. (HTTP ${res.status})`;
-        try {
-          const errData = await res.json();
-          errorMsg =
-            (errData.error ? `AI error: ${errData.error}` : '') +
-            (errData.details ? `\nDetails: ${errData.details}` : '') +
-            (errData.message ? `\nMessage: ${errData.message}` : '') +
-            `\n(HTTP ${res.status})`;
-          // If fallback generic response is present, show it
-          if (errData.fallback && errData.answer) {
-            setMessages((msgs) => {
-              const updated = [...msgs];
-              let lastIdx = updated.length - 1;
-              while (lastIdx >= 0 && updated[lastIdx].role !== "ai") lastIdx--;
-              if (lastIdx >= 0) updated[lastIdx] = { ...updated[lastIdx], content: errData.answer, fallback: true };
-              return updated;
-            });
-            setLoading(false);
-            return;
+        if (contentType.includes("application/json")) {
+          try {
+            const errData = await res.json();
+            errorMsg =
+              (errData.error ? `AI error: ${errData.error}` : '') +
+              (errData.details ? `\nDetails: ${errData.details}` : '') +
+              (errData.message ? `\nMessage: ${errData.message}` : '') +
+              `\n(HTTP ${res.status})`;
+            // If fallback generic response is present, show it
+            if (errData.fallback && errData.answer) {
+              setMessages((msgs) => {
+                const updated = [...msgs];
+                let lastIdx = updated.length - 1;
+                while (lastIdx >= 0 && updated[lastIdx].role !== "ai") lastIdx--;
+                if (lastIdx >= 0) updated[lastIdx] = { ...updated[lastIdx], content: errData.answer, fallback: true };
+                return updated;
+              });
+              setLoading(false);
+              return;
+            }
+          } catch (jsonErr) {
+            errorMsg += `\nFailed to parse error JSON: ${jsonErr}`;
           }
-        } catch {
-          // If JSON parse fails, try to get text
+        } else {
           try {
             const text = await res.text();
             errorMsg += `\nRaw response: ${text}`;
