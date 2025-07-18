@@ -231,13 +231,15 @@ export default function SupportAIPage() {
         });
         setLoading(false);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       let errorMsg = "Network error.";
       if (err && typeof err === 'object') {
-        if (err.name === 'MongoServerSelectionError') {
-          errorMsg = `Database connection error: ${err.message}`;
-        } else if (err.message) {
-          errorMsg = `Network error: ${err.message}`;
+        // Type guard for error with 'name' and 'message' properties
+        const errorWithProps = err as { name?: string; message?: string };
+        if (errorWithProps.name === 'MongoServerSelectionError') {
+          errorMsg = `Database connection error: ${errorWithProps.message}`;
+        } else if (errorWithProps.message) {
+          errorMsg = `Network error: ${errorWithProps.message}`;
         }
       }
       setError(errorMsg + "\nPlease check your internet connection or contact support if the problem persists.");
