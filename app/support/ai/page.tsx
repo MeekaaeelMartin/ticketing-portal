@@ -242,6 +242,9 @@ export default function SupportAIPage() {
           errorMsg = `Network error: ${errorWithProps.message}`;
         }
       }
+      if (errorMsg.includes('aborted') || errorMsg.includes('timeout')) {
+        errorMsg += '\nThe request to the AI service timed out or was aborted. Please try again or contact support if the issue persists.';
+      }
       setError(errorMsg + "\nPlease check your internet connection or contact support if the problem persists.");
       setMessages((msgs) => {
         // Remove the last empty AI message

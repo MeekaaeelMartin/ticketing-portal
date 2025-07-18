@@ -247,7 +247,7 @@ function getGenericResponse(question: string): string | null {
 // ----------------------------------
 
 // Helper to add timeout to fetch
-async function fetchWithTimeout(resource: RequestInfo, options: RequestInit = {}, timeout = 15000) {
+async function fetchWithTimeout(resource: RequestInfo, options: RequestInit = {}, timeout = 30000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   try {
@@ -317,6 +317,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err: unknown) {
+    console.error('Gemini API error:', err); // Log the full error object
     const message = (err && typeof err === 'object' && 'message' in err) ? (err as { message: string }).message : String(err);
     // Fallback to generic response
     try {
