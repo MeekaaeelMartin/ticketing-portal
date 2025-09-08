@@ -1,4 +1,4 @@
-import { MongoClient, Db } from 'mongodb';
+import { MongoClient, Db, ServerApiVersion } from 'mongodb';
 
 const uri = process.env.MONGODB_URI as string;
 if (!uri) throw new Error('MONGODB_URI is not defined in environment variables');
@@ -10,18 +10,24 @@ interface GlobalWithMongo {
   _mongoClientPromise?: Promise<MongoClient>;
 }
 const globalWithMongo = globalThis as GlobalWithMongo;
-if (process.env.NODE_ENV === 'development') {
-  // In dev, use a global variable so hot reloads don't create new clients
-  if (!globalWithMongo._mongoClientPromise) {
-    client = new MongoClient(uri);
-    globalWithMongo._mongoClientPromise = client.connect();
-  }
-  clientPromise = globalWithMongo._mongoClientPromise;
-} else {
-  // In prod, create a new client per invocation
-  client = new MongoClient(uri);
-  clientPromise = client.connect();
+// Reuse a single client across hot reloads and serverless invocations
+if (!globalWithMongo._mongoClientPromise) {
+  client = new MongoClient(uri, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+    // Tighter timeouts to fail fast in serverless
+    serverSelectionTimeoutMS: 10000,
+    connectTimeoutMS: 10000,
+    // Keepalive helps across reused connections in serverless
+    keepAlive: true,
+    keepAliveInitialDelay: 300000,
+  });
+  globalWithMongo._mongoClientPromise = client.connect();
 }
+clientPromise = globalWithMongo._mongoClientPromise;
 const clientPromiseConst = clientPromise;
 
 export async function getDb(): Promise<Db> {
