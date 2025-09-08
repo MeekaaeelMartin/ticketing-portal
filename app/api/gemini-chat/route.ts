@@ -295,16 +295,37 @@ export async function POST(req: NextRequest) {
     const lastUserMsg = messages.filter((m) => m.role === 'user').slice(-1)[0]?.content || '';
     const controller = new AbortController();
     const requestPromise = (async () => {
-      const res = await fetchWithTimeout(
-        'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key=' + GEMINI_API_KEY,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-          signal: controller.signal,
-        },
-        7000 // upstream budget
-      );
+      let res: Response | null = null;
+      try {
+        res = await fetchWithTimeout(
+          'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key=' + GEMINI_API_KEY,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+            signal: controller.signal,
+          },
+          9000 // try a bit longer for pro
+        );
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        const isAbort = /aborted|AbortError|timeout/i.test(msg);
+        if (!isAbort) throw e;
+        // Fallback to a faster model within remaining budget
+        try {
+          res = await fetchWithTimeout(
+            'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=' + GEMINI_API_KEY,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            },
+            5000
+          );
+        } catch (e2) {
+          throw e2;
+        }
+      }
       if (!res.ok) {
         const text = await res.text().catch(() => '');
         try {
@@ -377,7 +398,7 @@ export async function POST(req: NextRequest) {
     })();
     const raced = await Promise.race([
       requestPromise,
-      timeoutResponse(9000, 'Gemini request timed out.', lastUserMsg),
+      timeoutResponse(13000, 'Gemini request timed out.', lastUserMsg),
     ]) as Response;
     // Clear timeout if race won by request
     try { clearTimeout((timeoutResponse as unknown as { _id?: ReturnType<typeof setTimeout> })._id as ReturnType<typeof setTimeout>); } catch {}
