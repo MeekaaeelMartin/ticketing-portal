@@ -246,8 +246,8 @@ function getGenericResponse(question: string): string | null {
 }
 // ----------------------------------
 
-// Helper to add timeout to fetch
-async function fetchWithTimeout(resource: RequestInfo, options: RequestInit = {}, timeout = 30000) {
+// Helper to add timeout to fetch (shorter to avoid Netlify 502s)
+async function fetchWithTimeout(resource: RequestInfo, options: RequestInit = {}, timeout = 8000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   try {
@@ -284,7 +284,7 @@ export async function POST(req: NextRequest) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       },
-      15000 // 15 seconds
+      8000 // 8 seconds to avoid platform timeouts
     );
     if (!res.ok) {
       const text = await res.text().catch(() => '');
@@ -332,14 +332,71 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: `No response body from Gemini. Status: ${res.status}. Body: ${text}`, fallback: true }, { status: 500 });
       }
     }
-    // Stream the response to the client
-    return new Response(res.body, {
-      headers: {
-        'Content-Type': res.headers.get('content-type') || 'application/json',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    });
+    // Aggregate the upstream response and return JSON to avoid long-held streams (prevents 502s)
+    const contentType = res.headers.get('content-type') || '';
+    try {
+      if (contentType.includes('application/json')) {
+        const data = await res.json();
+        let aiContent = '';
+        if (Array.isArray(data)) {
+          for (const chunk of data) {
+            const text = chunk?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (typeof text === 'string') aiContent += text;
+          }
+        } else {
+          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (typeof text === 'string') aiContent += text;
+        }
+        if (!aiContent) {
+          // Fallback to generic response
+          const lastUserMsg = messages.filter((m) => m.role === 'user').slice(-1)[0]?.content || '';
+          const generic = getGenericResponse(lastUserMsg);
+          if (generic) return NextResponse.json({ success: true, answer: generic, fallback: true });
+          return NextResponse.json({ success: false, error: 'AI did not return a response.', fallback: true }, { status: 502 });
+        }
+        return NextResponse.json({ success: true, answer: aiContent });
+      } else {
+        // Read the stream fully and assemble content
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let done = false;
+        let aiContent = '';
+        while (!done) {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          if (value) {
+            buffer += decoder.decode(value, { stream: !done });
+            const lines = buffer.split(/\r?\n/);
+            buffer = lines.pop() || '';
+            for (const line of lines) {
+              if (!line.trim()) continue;
+              try {
+                const json = JSON.parse(line);
+                const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (typeof text === 'string') aiContent += text;
+              } catch {}
+            }
+          }
+        }
+        if (!aiContent) {
+          // Fallback to generic response
+          const lastUserMsg = messages.filter((m) => m.role === 'user').slice(-1)[0]?.content || '';
+          const generic = getGenericResponse(lastUserMsg);
+          if (generic) return NextResponse.json({ success: true, answer: generic, fallback: true });
+          return NextResponse.json({ success: false, error: 'AI did not return a response.', fallback: true }, { status: 502 });
+        }
+        return NextResponse.json({ success: true, answer: aiContent });
+      }
+    } catch (aggregateErr) {
+      const lastUserMsg = messages.filter((m) => m.role === 'user').slice(-1)[0]?.content || '';
+      const generic = getGenericResponse(lastUserMsg);
+      if (generic) return NextResponse.json({ success: true, answer: generic, fallback: true });
+      const message = (aggregateErr && typeof aggregateErr === 'object' && 'message' in aggregateErr)
+        ? (aggregateErr as { message: string }).message
+        : String(aggregateErr);
+      return NextResponse.json({ success: false, error: 'Failed to read AI response: ' + message, fallback: true }, { status: 502 });
+    }
   } catch (err: unknown) {
     console.error('Gemini API error:', err); // Log the full error object
     const message = (err && typeof err === 'object' && 'message' in err) ? (err as { message: string }).message : String(err);
@@ -352,6 +409,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, answer: generic, fallback: true });
       }
     } catch {}
-    return NextResponse.json({ success: false, error: 'Gemini API error: ' + message, fallback: true }, { status: 500 });
+    const isAbort = /aborted|AbortError|timeout/i.test(message);
+    return NextResponse.json({ success: false, error: (isAbort ? 'Gemini request timed out.' : 'Gemini API error: ' + message), fallback: true }, { status: isAbort ? 504 : 500 });
   }
 } 
