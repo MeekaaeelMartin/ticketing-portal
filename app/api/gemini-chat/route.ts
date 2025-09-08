@@ -318,6 +318,11 @@ export async function POST(req: NextRequest) {
             const maybeDetail = d as { reason?: unknown };
             return typeof maybeDetail.reason === 'string' && maybeDetail.reason === 'API_KEY_INVALID';
           });
+          const isReferrerBlocked = details.some((d): boolean => {
+            if (typeof d !== 'object' || d === null) return false;
+            const maybeDetail = d as { reason?: unknown };
+            return typeof maybeDetail.reason === 'string' && maybeDetail.reason === 'API_KEY_HTTP_REFERRER_BLOCKED';
+          });
           if (status === 'INVALID_ARGUMENT' && (hasInvalidKeyReason || /api key .*expired|invalid/i.test(message))) {
             return NextResponse.json(
               {
@@ -327,6 +332,17 @@ export async function POST(req: NextRequest) {
                 fallback: true,
               },
               { status: 401 }
+            );
+          }
+          if (status === 'PERMISSION_DENIED' && isReferrerBlocked) {
+            return NextResponse.json(
+              {
+                success: false,
+                error: 'Gemini key is restricted to HTTP referrers, but server requests have no referrer. Use a server-side key without referrer restrictions (API-restricted only).',
+                code: 'GEMINI_API_KEY_REFERRER_BLOCKED',
+                fallback: true,
+              },
+              { status: 403 }
             );
           }
         } catch {}
