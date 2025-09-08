@@ -294,8 +294,12 @@ export async function POST(req: NextRequest) {
         const error = parsed?.error;
         const status = error?.status;
         const message = error?.message || '';
-        const details = Array.isArray(error?.details) ? error.details : [];
-        const hasInvalidKeyReason = details.some((d: any) => d?.reason === 'API_KEY_INVALID');
+        const details: unknown[] = Array.isArray(error?.details) ? error.details : [];
+        const hasInvalidKeyReason = details.some((d): boolean => {
+          if (typeof d !== 'object' || d === null) return false;
+          const maybeDetail = d as { reason?: unknown };
+          return typeof maybeDetail.reason === 'string' && maybeDetail.reason === 'API_KEY_INVALID';
+        });
         if (status === 'INVALID_ARGUMENT' && (hasInvalidKeyReason || /api key .*expired|invalid/i.test(message))) {
           return NextResponse.json(
             {
