@@ -260,6 +260,21 @@ async function fetchWithTimeout(resource: RequestInfo, options: RequestInit = {}
   }
 }
 
+function timeoutResponse(ms: number, message: string, lastUserMsg?: string) {
+  return new Promise<Response>((resolve) => {
+    const id = setTimeout(() => {
+      const generic = lastUserMsg ? getGenericResponse(lastUserMsg) : null;
+      if (generic) {
+        resolve(NextResponse.json({ success: true, answer: generic, fallback: true }));
+      } else {
+        resolve(NextResponse.json({ success: false, error: message, fallback: true }, { status: 504 }));
+      }
+    }, ms);
+    // Note: caller should clearTimeout if they win the race
+    (timeoutResponse as unknown as { _id?: ReturnType<typeof setTimeout> })._id = id;
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { userInfo, messages }: { userInfo: GeminiUserInfo; messages: GeminiChatMessage[] } = await req.json();
@@ -269,7 +284,7 @@ export async function POST(req: NextRequest) {
     if (!GEMINI_API_KEY) {
       return NextResponse.json({ success: false, error: 'Gemini API key is not set.' }, { status: 500 });
     }
-    // Prepare Gemini API request
+    // Prepare Gemini API request (non-streaming for platform stability)
     const geminiMessages = messages.map((m: GeminiChatMessage) => ({
       role: m.role === 'ai' ? 'model' : 'user',
       parts: [{ text: m.content }],
@@ -277,16 +292,81 @@ export async function POST(req: NextRequest) {
     const body = {
       contents: geminiMessages,
     };
-    const res = await fetchWithTimeout(
-      'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:streamGenerateContent?key=' + GEMINI_API_KEY,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      },
-      8000 // 8 seconds to avoid platform timeouts
-    );
-    if (!res.ok) {
+    const lastUserMsg = messages.filter((m) => m.role === 'user').slice(-1)[0]?.content || '';
+    const controller = new AbortController();
+    const requestPromise = (async () => {
+      const res = await fetchWithTimeout(
+        'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key=' + GEMINI_API_KEY,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        },
+        7000 // upstream budget
+      );
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        try {
+          const parsed = JSON.parse(text);
+          const error = parsed?.error;
+          const status = error?.status;
+          const message = error?.message || '';
+          const details: unknown[] = Array.isArray(error?.details) ? error.details : [];
+          const hasInvalidKeyReason = details.some((d): boolean => {
+            if (typeof d !== 'object' || d === null) return false;
+            const maybeDetail = d as { reason?: unknown };
+            return typeof maybeDetail.reason === 'string' && maybeDetail.reason === 'API_KEY_INVALID';
+          });
+          if (status === 'INVALID_ARGUMENT' && (hasInvalidKeyReason || /api key .*expired|invalid/i.test(message))) {
+            return NextResponse.json(
+              {
+                success: false,
+                error: 'Gemini API key is invalid or expired. Update GEMINI_API_KEY and redeploy.',
+                code: 'GEMINI_API_KEY_INVALID',
+                fallback: true,
+              },
+              { status: 401 }
+            );
+          }
+        } catch {}
+        const generic = getGenericResponse(lastUserMsg);
+        if (generic) return NextResponse.json({ success: true, answer: generic, fallback: true });
+        return NextResponse.json({ success: false, error: `Gemini API error: Status ${res.status}. Body: ${text}`, fallback: true }, { status: res.status });
+      }
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await res.text().catch(() => '');
+        const generic = getGenericResponse(lastUserMsg);
+        if (generic) return NextResponse.json({ success: true, answer: generic, fallback: true });
+        return NextResponse.json({ success: false, error: `Unexpected response type from Gemini. Body: ${text}`, fallback: true }, { status: 502 });
+      }
+      const data = await res.json();
+      let aiContent = '';
+      if (Array.isArray(data)) {
+        for (const chunk of data) {
+          const text = chunk?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (typeof text === 'string') aiContent += text;
+        }
+      } else {
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (typeof text === 'string') aiContent += text;
+      }
+      if (!aiContent) {
+        const generic = getGenericResponse(lastUserMsg);
+        if (generic) return NextResponse.json({ success: true, answer: generic, fallback: true });
+        return NextResponse.json({ success: false, error: 'AI did not return a response.', fallback: true }, { status: 502 });
+      }
+      return NextResponse.json({ success: true, answer: aiContent });
+    })();
+    const raced = await Promise.race([
+      requestPromise,
+      timeoutResponse(9000, 'Gemini request timed out.', lastUserMsg),
+    ]) as Response;
+    // Clear timeout if race won by request
+    try { clearTimeout((timeoutResponse as unknown as { _id?: ReturnType<typeof setTimeout> })._id as ReturnType<typeof setTimeout>); } catch {}
+    return raced;
+    /*if (!res.ok) {
       const text = await res.text().catch(() => '');
       // Detect expired/invalid API key and surface a clearer message
       try {
@@ -320,8 +400,8 @@ export async function POST(req: NextRequest) {
       } else {
         return NextResponse.json({ success: false, error: `Gemini API error: Status ${res.status}. Body: ${text}`, fallback: true }, { status: res.status });
       }
-    }
-    if (!res.body) {
+    }*/
+    /*if (!res.body) {
       const text = await res.text().catch(() => '');
       // Fallback to generic response
       const lastUserMsg = messages.filter((m) => m.role === 'user').slice(-1)[0]?.content || '';
@@ -396,7 +476,7 @@ export async function POST(req: NextRequest) {
         ? (aggregateErr as { message: string }).message
         : String(aggregateErr);
       return NextResponse.json({ success: false, error: 'Failed to read AI response: ' + message, fallback: true }, { status: 502 });
-    }
+    }*/
   } catch (err: unknown) {
     console.error('Gemini API error:', err); // Log the full error object
     const message = (err && typeof err === 'object' && 'message' in err) ? (err as { message: string }).message : String(err);
