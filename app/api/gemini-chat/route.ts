@@ -392,7 +392,10 @@ export async function POST(req: NextRequest) {
       if (!aiContent) {
         const generic = getGenericResponse(lastUserMsg);
         if (generic) return NextResponse.json({ success: true, answer: generic, fallback: true });
-        return NextResponse.json({ success: false, error: 'AI did not return a response.', fallback: true }, { status: 502 });
+        // Include truncated raw response for diagnostics
+        let details = '';
+        try { details = JSON.stringify(data).slice(0, 2000); } catch {}
+        return NextResponse.json({ success: false, error: 'AI did not return a response.', details, fallback: true }, { status: 502 });
       }
       return NextResponse.json({ success: true, answer: aiContent });
     })();
