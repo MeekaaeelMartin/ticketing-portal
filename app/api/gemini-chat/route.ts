@@ -288,6 +288,26 @@ export async function POST(req: NextRequest) {
     );
     if (!res.ok) {
       const text = await res.text().catch(() => '');
+      // Detect expired/invalid API key and surface a clearer message
+      try {
+        const parsed = JSON.parse(text);
+        const error = parsed?.error;
+        const status = error?.status;
+        const message = error?.message || '';
+        const details = Array.isArray(error?.details) ? error.details : [];
+        const hasInvalidKeyReason = details.some((d: any) => d?.reason === 'API_KEY_INVALID');
+        if (status === 'INVALID_ARGUMENT' && (hasInvalidKeyReason || /api key .*expired|invalid/i.test(message))) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Gemini API key is invalid or expired. Update GEMINI_API_KEY and redeploy.',
+              code: 'GEMINI_API_KEY_INVALID',
+              fallback: true,
+            },
+            { status: 401 }
+          );
+        }
+      } catch {}
       // Fallback to generic response
       const lastUserMsg = messages.filter((m) => m.role === 'user').slice(-1)[0]?.content || '';
       const generic = getGenericResponse(lastUserMsg);
