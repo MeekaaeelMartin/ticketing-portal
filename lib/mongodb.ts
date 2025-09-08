@@ -4,7 +4,6 @@ const uri = process.env.MONGODB_URI as string;
 if (!uri) throw new Error('MONGODB_URI is not defined in environment variables');
 
 let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
 
 interface GlobalWithMongo {
   _mongoClientPromise?: Promise<MongoClient>;
@@ -21,18 +20,15 @@ if (!globalWithMongo._mongoClientPromise) {
     // Tighter timeouts to fail fast in serverless
     serverSelectionTimeoutMS: 10000,
     connectTimeoutMS: 10000,
-    // Keepalive helps across reused connections in serverless
-    keepAlive: true,
-    keepAliveInitialDelay: 300000,
+    // Note: keepAlive options are managed by the driver; not set explicitly here
   });
   globalWithMongo._mongoClientPromise = client.connect();
 }
-clientPromise = globalWithMongo._mongoClientPromise;
-const clientPromiseConst = clientPromise;
+const clientPromise = globalWithMongo._mongoClientPromise as Promise<MongoClient>;
 
 export async function getDb(): Promise<Db> {
   try {
-    const client = await clientPromiseConst;
+    const client = await clientPromise;
     return client.db(); // Use default DB from URI
   } catch (err) {
     console.error('MongoDB connection error:', err);
