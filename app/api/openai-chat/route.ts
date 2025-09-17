@@ -50,6 +50,13 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok) {
       const text = await res.text().catch(() => '');
+      // Clearer auth errors
+      if (res.status === 401 || /unauthorized|invalid api key/i.test(text)) {
+        return NextResponse.json(
+          { success: false, error: 'Unauthorized: check OPENAI_API_KEY in env and redeploy.', details: text },
+          { status: 401 }
+        );
+      }
       return NextResponse.json({ success: false, error: `OpenAI API error: ${res.status}`, details: text }, { status: res.status });
     }
 
