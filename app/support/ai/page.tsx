@@ -73,14 +73,14 @@ export default function SupportAIPage() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
-  // Gemini AI chat handler (calls backend)
+  // OpenAI chat handler (calls backend)
   const sendToAI = async (userMsg: string, userInfoOverride?: UserInfo) => {
     setLoading(true);
     setError(null);
-    let aiContent = "";
+    // Placeholder removed: OpenAI path sets content directly from JSON response
     setMessages((msgs) => [...msgs, { role: "ai", content: "" }]);
     try {
-      const res = await fetch("/api/gemini-chat", {
+      const res = await fetch("/api/openai-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userInfo: userInfoOverride || userInfo, messages: [...messages, { role: "user", content: userMsg }] }),
@@ -97,18 +97,6 @@ export default function SupportAIPage() {
               (errData.details ? `\nDetails: ${errData.details}` : '') +
               (errData.message ? `\nMessage: ${errData.message}` : '') +
               `\n(HTTP ${res.status})`;
-            // If fallback generic response is present, show it
-            if (errData.fallback && errData.answer) {
-              setMessages((msgs) => {
-                const updated = [...msgs];
-                let lastIdx = updated.length - 1;
-                while (lastIdx >= 0 && updated[lastIdx].role !== "ai") lastIdx--;
-                if (lastIdx >= 0) updated[lastIdx] = { ...updated[lastIdx], content: errData.answer, fallback: true };
-                return updated;
-              });
-              setLoading(false);
-              return;
-            }
           } catch (jsonErr) {
             errorMsg += `\nFailed to parse error JSON: ${jsonErr}`;
           }
@@ -133,105 +121,11 @@ export default function SupportAIPage() {
         });
         return;
       }
-      // Only handle JSON if not streaming
-      if (contentType.includes("application/json")) {
-        // Non-streaming: parse the whole response at once
-        const data = await res.json();
-        if (data.fallback && data.answer) {
-          setMessages((msgs) => {
-            const updated = [...msgs];
-            let lastIdx = updated.length - 1;
-            while (lastIdx >= 0 && updated[lastIdx].role !== "ai") lastIdx--;
-            if (lastIdx >= 0) updated[lastIdx] = { ...updated[lastIdx], content: data.answer, fallback: true };
-            return updated;
-          });
-          setLoading(false);
-          return;
-        }
-        let aiContent = "";
-        if (Array.isArray(data)) {
-          for (const chunk of data) {
-            const text = chunk.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (typeof text === "string") aiContent += text;
-          }
-        } else {
-          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (typeof text === "string") aiContent += text;
-        }
-        if (!aiContent) {
-          setError("AI did not return a response.");
-          setMessages((msgs) => {
-            // Remove the last empty AI message
-            const updated = [...msgs];
-            let lastIdx = updated.length - 1;
-            while (lastIdx >= 0 && updated[lastIdx].role !== "ai") lastIdx--;
-            if (lastIdx >= 0) updated.splice(lastIdx, 1);
-            return updated;
-          });
-          setLoading(false);
-          return;
-        }
-        setMessages((msgs) => {
-          const updated = [...msgs];
-          let lastIdx = updated.length - 1;
-          while (lastIdx >= 0 && updated[lastIdx].role !== "ai") lastIdx--;
-          if (lastIdx >= 0) updated[lastIdx] = { ...updated[lastIdx], content: aiContent };
-          return updated;
-        });
-        setLoading(false);
-        return;
-      }
-      // If not JSON, handle streaming as before
-      if (res.body) {
-        const reader = res.body.getReader();
-        let done = false;
-        const decoder = new TextDecoder();
-        let buffer = "";
-        let gotContent = false;
-        while (!done) {
-          const { value, done: doneReading } = await reader.read();
-          done = doneReading;
-          if (value) {
-            buffer += decoder.decode(value, { stream: !done });
-            const lines = buffer.split(/\r?\n/);
-            buffer = lines.pop() || "";
-            for (const line of lines) {
-              if (!line.trim()) continue;
-              try {
-                const json = JSON.parse(line);
-                const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (typeof text === "string") {
-                  aiContent += text;
-                  gotContent = true;
-                  setMessages((msgs) => {
-                    const updated = [...msgs];
-                    let lastIdx = updated.length - 1;
-                    while (lastIdx >= 0 && updated[lastIdx].role !== "ai") lastIdx--;
-                    if (lastIdx >= 0) updated[lastIdx] = { ...updated[lastIdx], content: aiContent };
-                    return updated;
-                  });
-                }
-              } catch {
-                // ignore JSON parse errors for incomplete lines
-              }
-            }
-          }
-        }
-        if (!gotContent) {
-          setError("AI did not return a response.");
-          setMessages((msgs) => {
-            // Remove the last empty AI message
-            const updated = [...msgs];
-            let lastIdx = updated.length - 1;
-            while (lastIdx >= 0 && updated[lastIdx].role !== "ai") lastIdx--;
-            if (lastIdx >= 0) updated.splice(lastIdx, 1);
-            return updated;
-          });
-        }
-        setLoading(false);
-        return;
-      } else {
-        setError("No response body from AI service.");
+      // OpenAI returns JSON { success, answer }
+      const data = await res.json();
+      const aiContent = typeof data?.answer === 'string' ? data.answer : '';
+      if (!aiContent) {
+        setError("AI did not return a response.");
         setMessages((msgs) => {
           // Remove the last empty AI message
           const updated = [...msgs];
@@ -243,6 +137,15 @@ export default function SupportAIPage() {
         setLoading(false);
         return;
       }
+      setMessages((msgs) => {
+        const updated = [...msgs];
+        let lastIdx = updated.length - 1;
+        while (lastIdx >= 0 && updated[lastIdx].role !== "ai") lastIdx--;
+        if (lastIdx >= 0) updated[lastIdx] = { ...updated[lastIdx], content: aiContent };
+        return updated;
+      });
+      setLoading(false);
+      return;
     } catch (err: unknown) {
       let errorMsg = "Network error.";
       if (err && typeof err === 'object') {
